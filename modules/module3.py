@@ -22,7 +22,7 @@ class Encoder(nn.Module):
             )
 
         self.mean_fc = nn.Linear(layers_size[-1], latent_size)
-        self.lvar_fc = nn.Linear(layers_size[-1], latent_size)
+        self.lstd_fc = nn.Linear(layers_size[-1], latent_size)
 
     def forward(self, x):
         '''
@@ -30,14 +30,14 @@ class Encoder(nn.Module):
             x   : Torch Tensor (batch_size, hidden_size) # hidden_size == layers_size[0]
         Return:
             mean: Troch Tensor (batch_size, latent_size)
-            lvar: Troch Tensor (batch_size, latent_size)
+            lstd: Troch Tensor (batch_size, latent_size)
         '''
         x = self.mlps(x)
 
         mean = self.mean_fc(x)
-        lvar = self.lvar_fc(x)
+        lstd = self.lstd_fc(x)
 
-        return mean, lvar
+        return mean, lstd
 
 class Decoder(nn.Module):
     def __init__(self, latent_size, layers_size):
@@ -86,35 +86,33 @@ class VAE(nn.Module):
             x   : Torch Tensor (batch_size, hidden_size)
         Return:
             mean: Troch Tensor (batch_size, latent_size)
-            lvar: Troch Tensor (batch_size, latent_size)
+            lstd: Troch Tensor (batch_size, latent_size)
             z   : Torch Tensor (batch_size, latent_size)
             y   : Torch Tensor (batch_size, output_size) # output_size == hidden_size
         '''
-        mean, lvar = self.encoder(x)
+        mean, lstd = self.encoder(x)
 
-        z = self.reparameterize(mean, lvar)
+        z = self.reparameterize(mean, lstd)
 
         reco_x = self.decoder(z)
 
-        return reco_x, z, mean, lvar
+        return reco_x, z, mean, lstd
 
-    def predict(self, n): # device?
+    def predict(self, n, device):
         '''
         Params:
             n: number of samples to generate
         Return:
             x: Torch Tensor (n, output_size)
         '''
-        z = torch.randn((n, self.latent_size))
+        z = torch.randn((n, self.latent_size)).to(device)
 
         x = self.decoder(z)
 
         return x
 
-    def reparameterize(self, mean, lvar):
-        gaussian_di = torch. randn_like(lvar)
-        reparameter = mean + gaussian_di * torch.exp(lvar) # ?
-        return reparameter
+    def reparameterize(self, mean, lstd):
+        return mean + torch.randn_like(lstd) * torch.exp(lstd) # lstd -> torch.log(std)
 
 def get_module(option):
     return VAE(
@@ -136,12 +134,12 @@ if  __name__ == '__main__':
 
     x = torch.randn((option.batch_size, channel * image_w * image_h))
 
-    reco_x, z, mean, lvar = module(x)
+    reco_x, z, mean, lstd = module(x)
 
     print(reco_x.shape) # (batch_size, channel * image_w * image_h)
     print(z.shape)      # (batch_size, latent_size)
     print(mean.shape)   # (batch_size, latent_size)
-    print(lvar.shape)   # (batch_size, latent_size)
+    print(lstd.shape)   # (batch_size, latent_size)
 
     n = 10
 
