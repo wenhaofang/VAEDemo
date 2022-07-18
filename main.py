@@ -45,6 +45,7 @@ logger = get_logger(option.name, logs_path)
 from loaders.loader1 import get_loader as get_loader1 # MNIST
 
 from modules.module3 import get_module as get_module3 # VAE
+from modules.module4 import get_module as get_module4 # CVAE
 
 from utils.misc import train, valid, save_checkpoint, load_checkpoint, save_sample
 
@@ -59,6 +60,7 @@ loader = get_loader1(option)
 logger.info('prepare module')
 
 module = get_module3(option).to(device) if option.module == 3 else \
+         get_module4(option).to(device) if option.module == 4 else \
          None
 
 logger.info('prepare envs')
@@ -66,13 +68,14 @@ logger.info('prepare envs')
 optimizer = optim.Adam(module.parameters())
 
 criterion = criterion2 if option.module == 3 else \
+            criterion2 if option.module == 4 else \
             None
 
 logger.info('start training!')
 
 for epoch in range(1, 1 + option.num_epochs):
-    train_info = train(module, option.module, option.num_sample, device, loader, criterion, optimizer)
-    valid_info = valid(module, option.module, option.num_sample, device)
+    train_info = train(module, option.module, option.num_labels, device, loader, criterion, optimizer)
+    valid_info = valid(module, option.module, option.num_labels, device)
     logger.info('[Epoch %d] Train Loss: %f' % (epoch, train_info['loss']))
     if  epoch % option.print_freq == 0: 
         save_sample( os.path.join( sample_folder, str(epoch) + '_true.png'), train_info['true_images'])

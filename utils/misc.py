@@ -10,7 +10,7 @@ from torchvision.utils import save_image
 def criterion2(x, reco_x, mean, lstd):
     bce = F.binary_cross_entropy(reco_x, x, reduction = 'sum')
     var = torch.pow(torch.exp(lstd), 2)
-    kld = -0.5 * torch.sum(1 + torch.log(var) - torch.pow(mean, 2) - var)
+    kld = torch.sum(torch.log(var) + 1 - torch.pow(mean, 2) - var) * (-0.5)
     return bce + kld
 
 def train(module, module_id, number, device, loader, criterion, optimizer):
@@ -25,6 +25,9 @@ def train(module, module_id, number, device, loader, criterion, optimizer):
         label = label.to(device)
         if  module_id == 3:
             reco_image, _, mean, lstd = module(image)
+            loss = criterion(image, reco_image, mean, lstd)
+        if  module_id == 4:
+            reco_image, _, mean, lstd = module(image, to_onehot(label, number))
             loss = criterion(image, reco_image, mean, lstd)
 
         epoch_loss += loss.item()
@@ -49,7 +52,12 @@ def train(module, module_id, number, device, loader, criterion, optimizer):
 
 def valid(module, module_id, number, device):
     module.eval()
-    pred_images = module.predict(number, device).view(number, 1, 28, 28)
+
+    if  module_id == 3:
+        pred_images = module.predict(number, device).view(number, 1, 28, 28)
+    if  module_id == 4:
+        pred_images = module.predict(to_onehot(torch.arange(number), number).to(device)).view(number, 1, 28, 28)
+
     return {
         'pred_images': pred_images
     }
@@ -70,3 +78,14 @@ def load_checkpoint(load_path, model, optim):
 
 def save_sample(save_path, samples):
     save_image (make_grid (samples.cpu(), nrow = 5, normalize = True).detach(), save_path)
+
+def to_onehot(i, n):
+    '''
+    Params:
+        i: Torch Tensor (batch_size) / Troch Tensor (batch_size, 1)
+        n: Integer, the max value of i
+    '''
+    if  i.dim() == 1:
+        i = i.unsqueeze(1)
+
+    return torch.zeros((i.shape[0], n), device = i.device).scatter(1, i, 1)

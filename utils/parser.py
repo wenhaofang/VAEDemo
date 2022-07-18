@@ -21,9 +21,8 @@ def get_parser():
     parser.add_argument('--batch_size', type = int, default = 64, help = '')
     parser.add_argument('--num_epochs', type = int, default = 50, help = '')
 
-    parser.add_argument('--print_freq', type = int, default = 5, help = '')
+    parser.add_argument('--num_labels', type = int, default = 10, help = '')
 
-    # For Valid
-    parser.add_argument('--num_sample', type = int, default = 10, help = '')
+    parser.add_argument('--print_freq', type = int, default = 5, help = '')
 
     return parser

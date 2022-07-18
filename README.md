@@ -8,7 +8,9 @@ Datasets:
 
 Models:
 
-* `model3`: VAE | [Auto-Encoding Variational Bayes](https://arxiv.org/abs/1312.6114)
+* `model3`: VAE
+
+* `model4`: CVAE
 
 ### Unit Test
 
@@ -23,6 +25,8 @@ PYTHONPATH=. python loaders/loader1.py
 ```shell
 # VAE
 PYTHONPATH=. python modules/module3.py
+# CVAE
+PYTHONPATH=. python modules/module4.py
 ```
 
 ### Main Process
@@ -38,4 +42,9 @@ Here are the examples for each module:
 ```shell
 # module3
 python main.py --module 3
+```
+
+```shell
+# module4
+python main.py --module 4
 ```
