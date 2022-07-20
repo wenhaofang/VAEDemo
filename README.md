@@ -8,6 +8,8 @@ Datasets:
 
 Models:
 
+* `model1`: AE
+
 * `model3`: VAE
 
 * `model4`: CVAE
@@ -23,6 +25,8 @@ PYTHONPATH=. python loaders/loader1.py
 * for modules
 
 ```shell
+# AE
+PYTHONPATH=. python modules/module1.py
 # VAE
 PYTHONPATH=. python modules/module3.py
 # CVAE
@@ -40,11 +44,22 @@ You can change the config either in the command line or in the file `utils/parse
 Here are the examples for each module:
 
 ```shell
+# module1
+python main.py \
+    --name 1 \
+    --module 1
+```
+
+```shell
 # module3
-python main.py --module 3
+python main.py \
+    --name 3 \
+    --module 3
 ```
 
 ```shell
 # module4
-python main.py --module 4
+python main.py \
+    --name 4 \
+    --module 4
 ```

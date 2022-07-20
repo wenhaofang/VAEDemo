@@ -13,7 +13,7 @@ def get_parser():
     parser.add_argument('--encoder_layers_size', type = list, default = [784, 512, 256], help = '')
     parser.add_argument('--decoder_layers_size', type = list, default = [256, 512, 784], help = '')
 
-    parser.add_argument('--latent_size', type = int, default = 16, help = '')
+    parser.add_argument('--latent_size', type = int, default = 2, help = '')
 
     # For Train
     parser.add_argument('--module', type = int, choices = range(1, 5), default = 1, help = '')

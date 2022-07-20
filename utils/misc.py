@@ -7,6 +7,14 @@ import torch.nn.functional as F
 from torchvision.utils import make_grid
 from torchvision.utils import save_image
 
+import numpy as np
+
+import matplotlib.pyplot as plt
+
+def criterion1(x, reco_x):
+    bce = F.binary_cross_entropy(reco_x, x, reduction = 'sum')
+    return bce
+
 def criterion2(x, reco_x, mean, lstd):
     bce = F.binary_cross_entropy(reco_x, x, reduction = 'sum')
     var = torch.pow(torch.exp(lstd), 2)
@@ -18,21 +26,30 @@ def train(module, module_id, number, device, loader, criterion, optimizer):
     epoch_loss = 0.0
     true_images = []
     reco_images = []
+    ys = []
+    zs = []
 
     for mini_batch in tqdm.tqdm(loader):
         image , label = mini_batch
         image = image.to(device).view(image.shape[0], 1 * 28 * 28)
         label = label.to(device)
+        if  module_id == 1:
+            reco_image, z = module(image)
+            loss = criterion(image, reco_image)
         if  module_id == 3:
-            reco_image, _, mean, lstd = module(image)
+            reco_image, z, mean, lstd = module(image)
             loss = criterion(image, reco_image, mean, lstd)
         if  module_id == 4:
-            reco_image, _, mean, lstd = module(image, to_onehot(label, number))
+            reco_image, z, mean, lstd = module(image, to_onehot(label, number))
             loss = criterion(image, reco_image, mean, lstd)
 
         epoch_loss += loss.item()
         true_images.append(image)
         reco_images.append(reco_image)
+
+        ys.append(label)
+        zs.append(z)
+
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -44,20 +61,24 @@ def train(module, module_id, number, device, loader, criterion, optimizer):
     true_images = true_images[:number]
     reco_images = reco_images[:number]
 
+    ys = torch.cat(ys, dim = 0)
+    zs = torch.cat(zs, dim = 0)
+
     return {
         'loss': epoch_loss / len(loader),
         'true_images': true_images,
         'reco_images': reco_images,
+        'ys': ys,
+        'zs': zs,
     }
 
 def valid(module, module_id, number, device):
     module.eval()
-
+    pred_images = None
     if  module_id == 3:
         pred_images = module.predict(number, device).view(number, 1, 28, 28)
     if  module_id == 4:
         pred_images = module.predict(to_onehot(torch.arange(number), number).to(device)).view(number, 1, 28, 28)
-
     return {
         'pred_images': pred_images
     }
@@ -78,6 +99,20 @@ def load_checkpoint(load_path, model, optim):
 
 def save_sample(save_path, samples):
     save_image (make_grid (samples.cpu(), nrow = 5, normalize = True).detach(), save_path)
+
+def save_visual(save_path, ys, zs):
+    ys = ys.detach().cpu().numpy()
+    zs = zs.detach().cpu().numpy()
+    for yt in np.unique(ys):
+        plt.scatter(
+            zs[ys == yt][:, 0],
+            zs[ys == yt][:, 1],
+            alpha = .2,
+            label = yt,
+        )
+    plt.legend()
+    plt.savefig(save_path)
+    plt.close()
 
 def to_onehot(i, n):
     '''
