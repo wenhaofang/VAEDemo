@@ -114,11 +114,13 @@ def load_checkpoint(load_path, model, optim):
     return checkpoint['epoch']
 
 def save_sample(save_path, samples):
-    if  samples == None:
+    if  samples == None: # only for generative model
         return
     save_image (make_grid (samples.cpu(), nrow = 5, normalize = True).detach(), save_path)
 
 def save_visual(save_path, ys, zs):
+    if  zs.size(1) != 2: # only for latent size == 2
+        return
     ys = ys.detach().cpu().numpy()
     zs = zs.detach().cpu().numpy()
     for yt in np.unique(ys):
@@ -135,7 +137,6 @@ def save_visual(save_path, ys, zs):
 def to_onehot(i , n):
     if  i.dim() == 1:
         i = i.unsqueeze(1)
-
     return torch.zeros((i.shape[0], n), device = i.device).scatter(1, i, 1)
 
 def add_noise(i):
