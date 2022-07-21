@@ -10,6 +10,8 @@ Models:
 
 * `model1`: AE
 
+* `model2`: SAE
+
 * `model3`: VAE
 
 * `model4`: CVAE
@@ -27,6 +29,8 @@ PYTHONPATH=. python loaders/loader1.py
 ```shell
 # AE
 PYTHONPATH=. python modules/module1.py
+# SAE
+PYTHONPATH=. python modules/module2.py
 # VAE
 PYTHONPATH=. python modules/module3.py
 # CVAE
@@ -48,6 +52,13 @@ Here are the examples for each module:
 python main.py \
     --name 1 \
     --module 1
+```
+
+```shell
+# module2
+python main.py \
+    --name 2 \
+    --module 2
 ```
 
 ```shell

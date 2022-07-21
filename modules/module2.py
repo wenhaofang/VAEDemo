@@ -1,4 +1,4 @@
-# VAE
+# SAE | the same as AE
 
 import torch
 import torch.nn as nn
@@ -11,8 +11,8 @@ class Encoder(nn.Module):
             i_size,
             o_size,
         ) in enumerate(zip(
-            layers_size[:-1],
-            layers_size[+1:],
+            layers_size,
+            layers_size[1:] + [latent_size],
         )):
             self.mlps.add_module(
                 name = 'e_l_{}'.format(layer_i), module = nn.Linear(i_size, o_size)
@@ -21,23 +21,16 @@ class Encoder(nn.Module):
                 name = 'e_a_{}'.format(layer_i), module = nn.ReLU()
             )
 
-        self.mean_fc = nn.Linear(layers_size[-1], latent_size)
-        self.lstd_fc = nn.Linear(layers_size[-1], latent_size)
-
     def forward(self, x):
         '''
         Params:
-            x   : Torch Tensor (batch_size, hidden_size) # hidden_size == layers_size[0]
+            x: Torch Tensor (batch_size, hidden_size) # hidden_size == layers_size[0]
         Return:
-            mean: Troch Tensor (batch_size, latent_size)
-            lstd: Troch Tensor (batch_size, latent_size)
+            z: Troch Tensor (batch_size, latent_size)
         '''
-        x = self.mlps(x)
+        z = self.mlps(x)
 
-        mean = self.mean_fc(x) # diff
-        lstd = self.lstd_fc(x) # diff
-
-        return mean, lstd
+        return z
 
 class Decoder(nn.Module):
     def __init__(self, latent_size, layers_size):
@@ -68,9 +61,9 @@ class Decoder(nn.Module):
 
         return x
 
-class VAE(nn.Module):
+class SAE(nn.Module):
     def __init__(self, encoder_layers_size, latent_size, decoder_layers_size):
-        super(VAE, self).__init__()
+        super(SAE, self).__init__()
 
         assert type(latent_size) == int
         assert type(encoder_layers_size) == list
@@ -83,39 +76,19 @@ class VAE(nn.Module):
     def forward(self, x):
         '''
         Params:
-            x   : Torch Tensor (batch_size, hidden_size)
+            x: Torch Tensor (batch_size, hidden_size)
         Return:
-            mean: Troch Tensor (batch_size, latent_size)
-            lstd: Troch Tensor (batch_size, latent_size)
-            z   : Torch Tensor (batch_size, latent_size)
-            y   : Torch Tensor (batch_size, output_size) # output_size == hidden_size
+            z: Torch Tensor (batch_size, latent_size)
+            y: Torch Tensor (batch_size, output_size) # output_size == hidden_size
         '''
-        mean, lstd = self.encoder(x)
+        z = self.encoder(x)
 
-        z = self.reparameterize(mean, lstd) # diff
+        y = self.decoder(z)
 
-        reco_x = self.decoder(z)
-
-        return reco_x, z, mean, lstd
-
-    def predict(self, n, device):
-        '''
-        Params:
-            n: number of samples to generate
-        Return:
-            x: Torch Tensor (n, output_size)
-        '''
-        z = torch.randn((n, self.latent_size)).to(device)
-
-        x = self.decoder(z)
-
-        return x
-
-    def reparameterize(self, mean, lstd):
-        return mean + torch.randn_like(lstd) * torch.exp(lstd) # lstd -> torch.log(std)
+        return y, z
 
 def get_module(option):
-    return VAE(
+    return SAE(
         option.encoder_layers_size, option.latent_size, option.decoder_layers_size
     )
 
@@ -134,13 +107,7 @@ if  __name__ == '__main__':
 
     x = torch.randn((option.batch_size, channel * image_w * image_h))
 
-    reco_x, z, mean, lstd = module(x)
+    reco_x, z = module(x)
 
     print(reco_x.shape) # (batch_size, channel * image_w * image_h)
     print(z.shape)      # (batch_size, latent_size)
-    print(mean.shape)   # (batch_size, latent_size)
-    print(lstd.shape)   # (batch_size, latent_size)
-
-    y = module.predict(option.num_labels, torch.device('cpu'))
-
-    print(y.shape)      # (n, channel * image_w * image_h)

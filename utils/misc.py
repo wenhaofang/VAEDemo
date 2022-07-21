@@ -33,14 +33,30 @@ def train(module, module_id, number, device, loader, criterion, optimizer):
         image , label = mini_batch
         image = image.to(device).view(image.shape[0], 1 * 28 * 28)
         label = label.to(device)
+
+        if  module_id == 2:
+            image_noises = add_noise(image)
+        if  module_id == 4:
+            label_onehot = to_onehot(label, number)
+
         if  module_id == 1:
             reco_image, z = module(image)
-            loss = criterion(image, reco_image)
+        if  module_id == 2:
+            reco_image, z = module(image_noises)
         if  module_id == 3:
             reco_image, z, mean, lstd = module(image)
-            loss = criterion(image, reco_image, mean, lstd)
         if  module_id == 4:
-            reco_image, z, mean, lstd = module(image, to_onehot(label, number))
+            reco_image, z, mean, lstd = module(image, label_onehot)
+
+        if  (
+            module_id == 1 or
+            module_id == 2
+        ):
+            loss = criterion(image, reco_image)
+        if  (
+            module_id == 3 or
+            module_id == 4
+        ):
             loss = criterion(image, reco_image, mean, lstd)
 
         epoch_loss += loss.item()
@@ -98,6 +114,8 @@ def load_checkpoint(load_path, model, optim):
     return checkpoint['epoch']
 
 def save_sample(save_path, samples):
+    if  samples == None:
+        return
     save_image (make_grid (samples.cpu(), nrow = 5, normalize = True).detach(), save_path)
 
 def save_visual(save_path, ys, zs):
@@ -114,13 +132,11 @@ def save_visual(save_path, ys, zs):
     plt.savefig(save_path)
     plt.close()
 
-def to_onehot(i, n):
-    '''
-    Params:
-        i: Torch Tensor (batch_size) / Troch Tensor (batch_size, 1)
-        n: Integer, the max value of i
-    '''
+def to_onehot(i , n):
     if  i.dim() == 1:
         i = i.unsqueeze(1)
 
     return torch.zeros((i.shape[0], n), device = i.device).scatter(1, i, 1)
+
+def add_noise(i):
+    return i + 0.1 * torch.randn_like(i)
