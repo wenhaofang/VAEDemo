@@ -4,9 +4,16 @@ import torch
 import torch.nn as nn
 
 class Encoder(nn.Module):
-    def __init__(self, layers_size, latent_size, num_labels):
+    def __init__(
+        self,
+        latent_size: int,
+        layers_size: list,
+        num_labels : int,
+    ):
         super(Encoder, self).__init__()
+
         self.mlps = nn.Sequential()
+
         for layer_i, (
             i_size,
             o_size,
@@ -46,9 +53,16 @@ class Encoder(nn.Module):
         return mean, lstd
 
 class Decoder(nn.Module):
-    def __init__(self, latent_size, layers_size, num_labels):
+    def __init__(
+        self,
+        latent_size: int,
+        layers_size: list,
+        num_labels : int,
+    ):
         super(Decoder, self).__init__()
+
         self.mlps = nn.Sequential()
+
         for layer_i, (
             i_size,
             o_size,
@@ -78,15 +92,18 @@ class Decoder(nn.Module):
         return x
 
 class CVAE(nn.Module):
-    def __init__(self, encoder_layers_size, latent_size, decoder_layers_size, num_labels):
+    def __init__(
+        self,
+        latent_size: int,
+        encoder_layers_size: list,
+        decoder_layers_size: list,
+        num_labels: int,
+    ):
         super(CVAE, self).__init__()
 
-        assert type(latent_size) == int
-        assert type(encoder_layers_size) == list
-        assert type(decoder_layers_size) == list
-
         self.latent_size = latent_size
-        self.encoder = Encoder(encoder_layers_size, latent_size, num_labels)
+
+        self.encoder = Encoder(latent_size, encoder_layers_size, num_labels)
         self.decoder = Decoder(latent_size, decoder_layers_size, num_labels)
 
     def forward(self, x, c):
@@ -98,7 +115,7 @@ class CVAE(nn.Module):
             mean: Troch Tensor (batch_size, latent_size)
             lstd: Troch Tensor (batch_size, latent_size)
             z   : Torch Tensor (batch_size, latent_size)
-            y   : Torch Tensor (batch_size, output_size) # output_size == hidden_size
+            y   : Torch Tensor (batch_size, output_size)
         '''
         mean, lstd = self.encoder(x, c) # diff
 
@@ -122,11 +139,15 @@ class CVAE(nn.Module):
         return x
 
     def reparameterize(self, mean, lstd):
+
         return mean + torch.randn_like(lstd) * torch.exp(lstd) # lstd -> torch.log(std)
 
 def get_module (option):
     return CVAE(
-        option.encoder_layers_size, option.latent_size, option.decoder_layers_size, option.num_labels
+        option.latent_size,
+        option.encoder_layers_size,
+        option.decoder_layers_size,
+        option.num_labels,
     )
 
 if  __name__ == '__main__':
@@ -144,22 +165,19 @@ if  __name__ == '__main__':
     image_w = 28
     image_h = 28
 
-    x = torch.randn(( option.batch_size,  channel * image_w * image_h))
-    c = to_onehot(
-        torch.randint(option.num_labels, (option.batch_size,)),
-        option.num_labels
-    )
+    x = torch.randn((option.batch_size,  channel * image_w * image_h))
+    c = to_onehot(torch.randint(option.num_labels, (option.batch_size,)), option.num_labels)
 
     reco_x, z, mean, lstd = module(x, c)
 
-    print(reco_x.shape) # (batch_size, channel * image_w * image_h)
-    print(z.shape)      # (batch_size, latent_size)
-    print(mean.shape)   # (batch_size, latent_size)
-    print(lstd.shape)   # (batch_size, latent_size)
+    print(reco_x.shape)  # (batch_size, channel * image_w * image_h)
+    print(z.shape)       # (batch_size, latent_size)
+    print(mean.shape)    # (batch_size, latent_size)
+    print(lstd.shape)    # (batch_size, latent_size)
 
     c = torch.arange(option.num_labels)
     c = to_onehot(c, option.num_labels)
 
     y = module.predict(c)
 
-    print(y.shape)      # (n, channel * image_w * image_h)
+    print(y.shape)  # (n, channel * image_w * image_h)

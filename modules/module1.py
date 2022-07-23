@@ -4,9 +4,15 @@ import torch
 import torch.nn as nn
 
 class Encoder(nn.Module):
-    def __init__(self, layers_size, latent_size):
+    def __init__(
+        self,
+        latent_size: int,
+        layers_size: list
+    ):
         super(Encoder, self).__init__()
+
         self.mlps = nn.Sequential()
+
         for layer_i, (
             i_size,
             o_size,
@@ -24,7 +30,7 @@ class Encoder(nn.Module):
     def forward(self, x):
         '''
         Params:
-            x: Torch Tensor (batch_size, hidden_size) # hidden_size == layers_size[0]
+            x: Torch Tensor (batch_size, hidden_size)
         Return:
             z: Troch Tensor (batch_size, latent_size)
         '''
@@ -33,9 +39,15 @@ class Encoder(nn.Module):
         return z
 
 class Decoder(nn.Module):
-    def __init__(self, latent_size, layers_size):
+    def __init__(
+        self,
+        latent_size: int,
+        layers_size: list
+    ):
         super(Decoder, self).__init__()
+
         self.mlps = nn.Sequential()
+
         for layer_i, (
             i_size,
             o_size,
@@ -55,22 +67,24 @@ class Decoder(nn.Module):
         Params:
             z: Torch Tensor (batch_size, latent_size)
         Return:
-            x: Torch Tensor (batch_size, output_size) # output_size == layers_size[-1]
+            x: Torch Tensor (batch_size, output_size)
         '''
         x = self.mlps(z)
 
         return x
 
 class AE(nn.Module):
-    def __init__(self, encoder_layers_size, latent_size, decoder_layers_size):
+    def __init__(
+        self,
+        latent_size: int,
+        encoder_layers_size: list,
+        decoder_layers_size: list,
+    ):
         super(AE, self).__init__()
 
-        assert type(latent_size) == int
-        assert type(encoder_layers_size) == list
-        assert type(decoder_layers_size) == list
-
         self.latent_size = latent_size
-        self.encoder = Encoder(encoder_layers_size, latent_size)
+
+        self.encoder = Encoder(latent_size, encoder_layers_size)
         self.decoder = Decoder(latent_size, decoder_layers_size)
 
     def forward(self, x):
@@ -79,7 +93,7 @@ class AE(nn.Module):
             x: Torch Tensor (batch_size, hidden_size)
         Return:
             z: Torch Tensor (batch_size, latent_size)
-            y: Torch Tensor (batch_size, output_size) # output_size == hidden_size
+            y: Torch Tensor (batch_size, output_size)
         '''
         z = self.encoder(x)
 
@@ -88,8 +102,10 @@ class AE(nn.Module):
         return y, z
 
 def get_module(option):
-    return AE(
-        option.encoder_layers_size, option.latent_size, option.decoder_layers_size
+    return AE (
+        option.latent_size,
+        option.encoder_layers_size,
+        option.decoder_layers_size,
     )
 
 if  __name__ == '__main__':
@@ -109,5 +125,5 @@ if  __name__ == '__main__':
 
     reco_x, z = module(x)
 
-    print(reco_x.shape) # (batch_size, channel * image_w * image_h)
-    print(z.shape)      # (batch_size, latent_size)
+    print(reco_x.shape)  # (batch_size, channel * image_w * image_h)
+    print(z.shape)       # (batch_size, latent_size)
