@@ -1,4 +1,4 @@
-# SAE | the same as AE
+# DAE | the same as AE
 
 import torch
 import torch.nn as nn
@@ -73,14 +73,14 @@ class Decoder(nn.Module):
 
         return x
 
-class SAE(nn.Module):
+class DAE(nn.Module):
     def __init__(
         self,
         latent_size: int,
         encoder_layers_size: list,
         decoder_layers_size: list,
     ):
-        super(SAE, self).__init__()
+        super(DAE, self).__init__()
 
         self.latent_size = latent_size
 
@@ -102,7 +102,7 @@ class SAE(nn.Module):
         return y, z
 
 def get_module(option):
-    return SAE(
+    return DAE(
         option.latent_size,
         option.encoder_layers_size,
         option.decoder_layers_size,

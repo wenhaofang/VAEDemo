@@ -45,7 +45,7 @@ logger = get_logger(option.name, logs_path)
 from loaders.loader1 import get_loader as get_loader1 # MNIST
 
 from modules.module1 import get_module as get_module1 # AE
-from modules.module2 import get_module as get_module2 # SAE
+from modules.module2 import get_module as get_module2 # DAE
 from modules.module3 import get_module as get_module3 # VAE
 from modules.module4 import get_module as get_module4 # CVAE
 
